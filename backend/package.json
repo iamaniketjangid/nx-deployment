@@ -1,0 +1,17 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Backend service for CI/CD build comparison (without Nx)",
+  "main": "index.js",
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "echo '🚀 Backend build started' && sleep 6 && echo '✅ Backend build completed'",
+    "test": "echo '🧪 Backend tests running' && sleep 3 && echo '✅ Backend tests passed'"
+  },
+  "keywords": ["backend", "ci", "pipeline"],
+  "author": "Aniket",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {}
+}
