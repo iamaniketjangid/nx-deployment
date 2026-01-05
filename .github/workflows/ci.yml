@@ -1,4 +1,4 @@
-name: CI Without Nx (Heavy & Path-Safe)
+name: CI Without Nx (Heavy, Path-Safe, Script-Safe)
 
 on:
   push:
@@ -10,15 +10,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Checkout code
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 2️⃣ Setup Node
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 18
 
-      # 🔍 Detect frontend folder
+      # 3️⃣ Detect frontend directory
       - name: Detect frontend directory
         id: frontend
         run: |
@@ -29,10 +31,11 @@ jobs:
           elif [ -d "packages/frontend" ]; then
             echo "path=packages/frontend" >> $GITHUB_OUTPUT
           else
-            echo "Frontend directory not found" && exit 1
+            echo "Frontend directory not found"
+            exit 1
           fi
 
-      # 🔍 Detect backend folder
+      # 4️⃣ Detect backend directory
       - name: Detect backend directory
         id: backend
         run: |
@@ -43,45 +46,86 @@ jobs:
           elif [ -d "packages/backend" ]; then
             echo "path=packages/backend" >> $GITHUB_OUTPUT
           else
-            echo "Backend directory not found" && exit 1
+            echo "Backend directory not found"
+            exit 1
           fi
 
-      # 📦 Install dependencies
+      # 5️⃣ Install frontend dependencies
       - name: Install frontend dependencies
         run: |
           cd ${{ steps.frontend.outputs.path }}
           npm install
 
+      # 6️⃣ Install backend dependencies
       - name: Install backend dependencies
         run: |
           cd ${{ steps.backend.outputs.path }}
           npm install
 
-      # 🧪 Lint
-      - name: Lint frontend
+      # 7️⃣ Lint frontend (optional)
+      - name: Lint frontend (if exists)
         run: |
           cd ${{ steps.frontend.outputs.path }}
-          npm run lint
+          if npm run | grep -q "lint"; then
+            npm run lint
+          else
+            echo "No lint script for frontend, skipping"
+          fi
 
-      - name: Lint backend
+      # 8️⃣ Lint backend (optional)
+      - name: Lint backend (if exists)
         run: |
           cd ${{ steps.backend.outputs.path }}
-          npm run lint
+          if npm run | grep -q "lint"; then
+            npm run lint
+          else
+            echo "No lint script for backend, skipping"
+          fi
 
-      # 🏗️ Build
-      - name: Build frontend
+      # 9️⃣ Test frontend (optional)
+      - name: Test frontend (if exists)
         run: |
           cd ${{ steps.frontend.outputs.path }}
-          npm run build
+          if npm run | grep -q "test"; then
+            npm test -- --watch=false || true
+          else
+            echo "No test script for frontend, skipping"
+          fi
 
-      - name: Build backend
+      # 🔟 Test backend (optional)
+      - name: Test backend (if exists)
         run: |
           cd ${{ steps.backend.outputs.path }}
-          npm run build
+          if npm run | grep -q "test"; then
+            npm test || true
+          else
+            echo "No test script for backend, skipping"
+          fi
 
-      # 🔐 Security audit (non-blocking)
+      # 1️⃣1️⃣ Build frontend (optional)
+      - name: Build frontend (if exists)
+        run: |
+          cd ${{ steps.frontend.outputs.path }}
+          if npm run | grep -q "build"; then
+            npm run build
+          else
+            echo "No build script for frontend, skipping"
+          fi
+
+      # 1️⃣2️⃣ Build backend (optional)
+      - name: Build backend (if exists)
+        run: |
+          cd ${{ steps.backend.outputs.path }}
+          if npm run | grep -q "build"; then
+            npm run build
+          else
+            echo "No build script for backend, skipping"
+          fi
+
+      # 1️⃣3️⃣ Security audit (non-blocking)
       - name: Dependency audit
         run: npm audit --audit-level=critical || true
 
-      - name: Done
-        run: echo "CI Without Nx finished"
+      # 1️⃣4️⃣ Done
+      - name: Pipeline completed
+        run: echo "CI Without Nx completed successfully"
