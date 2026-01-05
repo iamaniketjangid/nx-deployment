@@ -2,8 +2,7 @@ name: CI Without Nx
 
 on:
   push:
-    branches:
-      - main
+    branches: [ "main" ]
 
 jobs:
   build:
@@ -18,9 +17,20 @@ jobs:
         with:
           node-version: 18
 
-      - name: Install dependencies
-        run: npm install
+      - name: Build frontend
+        run: |
+          cd frontend
+          npm install
+          npm run build
 
-      - name: Build
-        run: npm run build
+      - name: Build backend
+        run: |
+          cd backend
+          npm install
+          npm run build
 
+      - name: Build shared
+        run: |
+          cd shared
+          npm install
+          npm run build
