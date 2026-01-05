@@ -1,8 +1,9 @@
-name: CI Without Nx
+name: CI Without Nx (Heavy)
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main ]
+  pull_request:
 
 jobs:
   build:
@@ -17,20 +18,50 @@ jobs:
         with:
           node-version: 18
 
+      - name: Install dependencies
+        run: npm ci
+
+      # ---------- LINT ----------
+      - name: Lint frontend
+        run: npm run lint --workspace=frontend
+
+      - name: Lint backend
+        run: npm run lint --workspace=backend
+
+      - name: Lint shared
+        run: npm run lint --workspace=shared
+
+      # ---------- TEST ----------
+      - name: Test frontend
+        run: npm run test --workspace=frontend
+
+      - name: Test backend
+        run: npm run test --workspace=backend
+
+      - name: Test shared
+        run: npm run test --workspace=shared
+
+      # ---------- TYPECHECK ----------
+      - name: Typecheck frontend
+        run: npm run typecheck --workspace=frontend
+
+      - name: Typecheck backend
+        run: npm run typecheck --workspace=backend
+
+      # ---------- BUILD ----------
       - name: Build frontend
-        run: |
-          cd frontend
-          npm install
-          npm run build
+        run: npm run build --workspace=frontend
 
       - name: Build backend
-        run: |
-          cd backend
-          npm install
-          npm run build
+        run: npm run build --workspace=backend
 
       - name: Build shared
-        run: |
-          cd shared
-          npm install
-          npm run build
+        run: npm run build --workspace=shared
+
+      # ---------- ARTIFACT ----------
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-build
+          path: |
+            dist/**
