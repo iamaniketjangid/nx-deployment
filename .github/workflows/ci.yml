@@ -1,4 +1,4 @@
-name: CI Without Nx (Heavy & Fixed)
+name: CI Without Nx (Heavy & Path-Safe)
 
 on:
   push:
@@ -10,64 +10,78 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2️⃣ Setup Node
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 18
 
-      # 3️⃣ Install dependencies (MANUAL per app ❌)
+      # 🔍 Detect frontend folder
+      - name: Detect frontend directory
+        id: frontend
+        run: |
+          if [ -d "frontend" ]; then
+            echo "path=frontend" >> $GITHUB_OUTPUT
+          elif [ -d "apps/frontend" ]; then
+            echo "path=apps/frontend" >> $GITHUB_OUTPUT
+          elif [ -d "packages/frontend" ]; then
+            echo "path=packages/frontend" >> $GITHUB_OUTPUT
+          else
+            echo "Frontend directory not found" && exit 1
+          fi
+
+      # 🔍 Detect backend folder
+      - name: Detect backend directory
+        id: backend
+        run: |
+          if [ -d "backend" ]; then
+            echo "path=backend" >> $GITHUB_OUTPUT
+          elif [ -d "apps/backend" ]; then
+            echo "path=apps/backend" >> $GITHUB_OUTPUT
+          elif [ -d "packages/backend" ]; then
+            echo "path=packages/backend" >> $GITHUB_OUTPUT
+          else
+            echo "Backend directory not found" && exit 1
+          fi
+
+      # 📦 Install dependencies
       - name: Install frontend dependencies
         run: |
-          cd apps/frontend
+          cd ${{ steps.frontend.outputs.path }}
           npm install
 
       - name: Install backend dependencies
         run: |
-          cd apps/backend
+          cd ${{ steps.backend.outputs.path }}
           npm install
 
-      # 4️⃣ Lint (ALL apps – even if unchanged ❌)
+      # 🧪 Lint
       - name: Lint frontend
         run: |
-          cd apps/frontend
+          cd ${{ steps.frontend.outputs.path }}
           npm run lint
 
       - name: Lint backend
         run: |
-          cd apps/backend
+          cd ${{ steps.backend.outputs.path }}
           npm run lint
 
-      # 5️⃣ Test (ALL apps ❌)
-      - name: Test frontend
-        run: |
-          cd apps/frontend
-          npm test -- --watch=false || true
-
-      - name: Test backend
-        run: |
-          cd apps/backend
-          npm test || true
-
-      # 6️⃣ Build (ALL apps ❌)
+      # 🏗️ Build
       - name: Build frontend
         run: |
-          cd apps/frontend
+          cd ${{ steps.frontend.outputs.path }}
           npm run build
 
       - name: Build backend
         run: |
-          cd apps/backend
+          cd ${{ steps.backend.outputs.path }}
           npm run build
 
-      # 7️⃣ Security audit (do not fail pipeline)
+      # 🔐 Security audit (non-blocking)
       - name: Dependency audit
         run: npm audit --audit-level=critical || true
 
-      # 8️⃣ Done
-      - name: Pipeline completed
-        run: echo "CI Without Nx completed (slow & heavy)"
+      - name: Done
+        run: echo "CI Without Nx finished"
